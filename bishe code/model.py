@@ -10,7 +10,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 # 读取数据
 batch_size = 1000
-data_chunks = pd.read_csv('selected_proteins100_400stuff.csv', chunksize=batch_size)
+data_chunks = pd.read_csv('selected_proteins5000_400stuff.csv', chunksize=batch_size)
 
 # 数据预处理
 max_seq_length = 50
@@ -52,7 +52,7 @@ embedding_dim = 64
 input_layer = tf.keras.layers.Input(shape=(max_seq_length,))
 embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=embedding_dim, input_length=max_seq_length)(input_layer)
 transformer_block = tf.keras.layers.MultiHeadAttention(num_heads=8, key_dim=embedding_dim)(embedding, embedding)
-transformer_block = tf.keras.layers.Dense(512, activation='relu')(transformer_block)
+transformer_block = tf.keras.layers.Dense(256, activation='relu')(transformer_block)
 transformer_block = tf.keras.layers.Dropout(0.3)(transformer_block)
 transformer_block = tf.keras.layers.LayerNormalization(epsilon=1e-6)(transformer_block)
 

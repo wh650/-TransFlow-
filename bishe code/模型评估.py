@@ -53,18 +53,30 @@ lstm_layers = 3
 epochs = 20
 
 # 构建模型
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=embedding_dim, input_length=max_seq_length),
-])
+input_layer = tf.keras.layers.Input(shape=(max_seq_length,))
+embedding = tf.keras.layers.Embedding(input_dim=len(tokenizer.word_index) + 1, output_dim=embedding_dim, input_length=max_seq_length)(input_layer)
+transformer_block = tf.keras.layers.MultiHeadAttention(num_heads=8, key_dim=embedding_dim)(embedding, embedding)
+transformer_block = tf.keras.layers.Dense(256, activation='relu')(transformer_block)
+transformer_block = tf.keras.layers.Dropout(0.3)(transformer_block)
+transformer_block = tf.keras.layers.LayerNormalization(epsilon=1e-6)(transformer_block)
 
-for i in range(lstm_layers):
-    model.add(tf.keras.layers.LSTM(lstm_units, return_sequences=i < lstm_layers - 1))
+lstm_output = tf.keras.layers.LSTM(256, return_sequences=True)(transformer_block)  # 将Transformer的输出作为LSTM的输入
+lstm_output = tf.keras.layers.LSTM(256, return_sequences=True)(lstm_output)
+lstm_output = tf.keras.layers.LSTM(256)(lstm_output)
 
-model.add(tf.keras.layers.Dense(128, activation='relu'))
-model.add(tf.keras.layers.Dropout(0.3))
-model.add(tf.keras.layers.Dense(len(label_to_index), activation='softmax'))
+output = tf.keras.layers.Dense(128, activation='relu')(lstm_output)
+output = tf.keras.layers.Dropout(0.3)(output)
+output = tf.keras.layers.Dense(len(label_to_index), activation='softmax')(output)
 
+model = tf.keras.models.Model(inputs=input_layer, outputs=output)
+
+# 编译模型
 model.compile(loss='sparse_categorical_crossentropy', optimizer=tf.keras.optimizers.Nadam(learning_rate=0.001), metrics=['accuracy'])
+
+# 训练模型
+epochs = 10
+batch_size = 256
+model.fit(X_train_tf, y_train_tf, validation_data=(X_val_tf, y_val_tf), epochs=epochs, batch_size=batch_size)
 
 # 模型评估
 history = model.fit(X_train_tf, y_train_tf, validation_data=(X_val_tf, y_val_tf), epochs=epochs, batch_size=256)

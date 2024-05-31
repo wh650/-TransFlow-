@@ -48,8 +48,6 @@ y_test_tf = tf.constant(y_test)
 
 # 设置Embedding层为64，LSTM每层256个单元，3层LSTM，epochs为10
 embedding_dim = 64
-lstm_units = 256
-lstm_layers = 3
 epochs = 20
 
 # 构建模型
